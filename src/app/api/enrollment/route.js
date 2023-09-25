@@ -80,7 +80,6 @@ export const POST = async (request) => {
     );
   }
 
-  const prisma = getPrisma();
   //1.check if courseNo does not exist on database
   //send this response back if courseNo does not exist
   // return NextResponse.json(
@@ -90,7 +89,56 @@ export const POST = async (request) => {
   //   },
   //   { status: 400 }
   // );
+  // const prisma = getPrisma();
+  // const course = await prisma.courses.findMany({
+  //   where: {
+  //     courseNo: courseNo,
+  //   },
+  // });
 
+  // if (!course) {
+  //   return NextResponse.json(
+  //     {
+  //       ok: false,
+  //       message: "Course number does not exist",
+  //     },
+  //     { status: 400 }
+  //   );
+  // }
+
+  const prisma = getPrisma();
+  const course = await prisma.course.findFirst({
+    where: {
+      courseNo: courseNo,
+    },
+  });
+
+  if (!course) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Course number does not exist",
+      },
+      { status: 400 }
+    );
+  }
+
+  const registered = await prisma.enrollment.findFirst({
+    where: {
+      studentId: studentId,
+      courseNo: courseNo,
+    },
+  });
+
+  if (registered) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "You already registered this course",
+      },
+      { status: 400 }
+    );
+  }
   //2.check if such student enroll that course already (both "studentId" and "courseNo" exists on enrollment collection)
   // return NextResponse.json(
   //   {
@@ -101,6 +149,14 @@ export const POST = async (request) => {
   // );
 
   //3.if conditions above are not met, perform inserting data here
+
+  const regist = await prisma.enrollment.create({
+    data: {
+      courseNo: courseNo,
+      studentId: studentId,
+    },
+  });
+
   // await prisma.enrollment.create({
   //   data:{
   //     ...
@@ -110,6 +166,7 @@ export const POST = async (request) => {
   return NextResponse.json({
     ok: true,
     message: "You has enrolled a course successfully",
+    regist,
   });
 };
 
